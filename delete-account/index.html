@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R3-Hub — Eliminar mi cuenta</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1115;
+    color: #e8e8ea;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .card {
+    background: #1a1d24;
+    border: 1px solid #2a2e38;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+  }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p.sub { color: #9a9ea8; font-size: 14px; margin: 0 0 24px; line-height: 1.5; }
+  label { display: block; font-size: 13px; margin-bottom: 6px; color: #c4c7cf; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid #2a2e38;
+    background: #12141a;
+    color: #e8e8ea;
+    font-size: 14px;
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-primary { background: #4f7cff; color: white; }
+  .btn-danger { background: #e5484d; color: white; }
+  .btn-danger:disabled { background: #6b3336; cursor: not-allowed; opacity: 1; }
+  .hidden { display: none; }
+  .msg { font-size: 13px; margin-top: 12px; line-height: 1.5; }
+  .msg.error { color: #ff8a8a; }
+  .msg.success { color: #7ee2a8; }
+  .msg.info { color: #9a9ea8; }
+  .warning-box {
+    background: #2a1618;
+    border: 1px solid #4d2226;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #ffb4b4;
+    margin-bottom: 20px;
+  }
+  .user-email { font-size: 13px; color: #9a9ea8; margin-bottom: 20px; }
+  a { color: #4f7cff; }
+
+  /* Overlay del pop-up final */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .overlay.hidden { display: none; }
+  .modal {
+    background: #1a1d24;
+    border: 1px solid #2a2e38;
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+  }
+  .modal-icon { font-size: 32px; margin-bottom: 12px; }
+  .modal h2 { font-size: 18px; margin: 0 0 8px; }
+  .modal p { font-size: 14px; color: #9a9ea8; line-height: 1.5; margin: 0 0 20px; }
+  .modal button { max-width: 200px; margin: 0 auto; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- PASO 1: LOGIN -->
+  <div id="loginStep">
+    <h1>Eliminar mi cuenta de R3-Hub</h1>
+    <p class="sub">Inicia sesión con tu cuenta de R3-Hub para continuar. Esta página elimina tu cuenta y tus datos personales de forma permanente.</p>
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="tu@email.com">
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button class="btn-primary" id="loginBtn">Continuar para eliminar</button>
+    <div id="loginMsg" class="msg"></div>
+    <p class="sub" style="margin-top:20px; margin-bottom:0;"><a href="/privacy">Política de privacidad</a></p>
+  </div>
+
+  <!-- PASO 2: CONFIRMAR BORRADO -->
+  <div id="deleteStep" class="hidden">
+    <h1>Confirmar eliminación</h1>
+    <p class="user-email" id="userEmailDisplay"></p>
+    <div class="warning-box">
+      Esta acción es <strong>permanente e irreversible</strong>. Se eliminarán tu cuenta, tu perfil y, si eres la única persona con acceso a tu centro, también todos los atletas, grupos y sesiones registrados en él. Si tu centro tiene más de un usuario, el resto del equipo conserva sus datos intactos.
+    </div>
+    <label for="confirmText">Escribe ELIMINAR para confirmar</label>
+    <input type="text" id="confirmText" placeholder="ELIMINAR">
+    <button class="btn-danger" id="deleteBtn" disabled>Eliminar cuenta</button>
+    <div id="deleteMsg" class="msg"></div>
+  </div>
+
+</div>
+
+<!-- POP-UP DE RESULTADO -->
+<div id="resultOverlay" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-icon" id="resultIcon">✅</div>
+    <h2 id="resultTitle">Cuenta eliminada</h2>
+    <p id="resultText">Tu cuenta y tus datos personales se han eliminado correctamente.</p>
+    <button class="btn-primary" id="resultCloseBtn">Cerrar</button>
+  </div>
+</div>
+
+<!-- Supabase JS client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // === CONFIGURACIÓN ===
+  const SUPABASE_URL = "https://yfjixzzvyfkfrsdwtdll.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlmaml4enp2eWZrZnJzZHd0ZGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzMxNjEsImV4cCI6MjA5OTI0OTE2MX0.Cf8aq7e9ipzb0jxR8LNNBRokuwQahzMEo50joz9civ0"; // clave pública anon — segura de exponer, nunca la service_role aquí
+  const EDGE_FUNCTION_NAME = "delete-account";
+  // =====================================================
+
+  const loginStep = document.getElementById('loginStep');
+  const deleteStep = document.getElementById('deleteStep');
+  const loginMsg = document.getElementById('loginMsg');
+  const deleteMsg = document.getElementById('deleteMsg');
+  const confirmText = document.getElementById('confirmText');
+  const deleteBtn = document.getElementById('deleteBtn');
+  const loginBtn = document.getElementById('loginBtn');
+  const resultOverlay = document.getElementById('resultOverlay');
+  const resultIcon = document.getElementById('resultIcon');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultText = document.getElementById('resultText');
+  const resultCloseBtn = document.getElementById('resultCloseBtn');
+
+  function showResult(icon, title, text) {
+    resultIcon.textContent = icon;
+    resultTitle.textContent = title;
+    resultText.textContent = text;
+    resultOverlay.classList.remove('hidden');
+  }
+
+  resultCloseBtn.addEventListener('click', () => {
+    resultOverlay.classList.add('hidden');
+  });
+
+  // Comprobación de que la librería de Supabase cargó correctamente.
+  // Si el CDN falla o tarda, esto lo deja avisado en vez de un botón mudo.
+  if (typeof window.supabase === 'undefined') {
+    loginMsg.textContent = 'No se pudo cargar el sistema de autenticación. Recarga la página; si el problema persiste, contacta con soporte.';
+    loginMsg.className = 'msg error';
+    loginBtn.disabled = true;
+  } else {
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    loginBtn.addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      loginMsg.textContent = '';
+      loginMsg.className = 'msg';
+
+      if (!email || !password) {
+        loginMsg.textContent = 'Introduce email y contraseña.';
+        loginMsg.className = 'msg error';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginMsg.textContent = 'Iniciando sesión...';
+      loginMsg.className = 'msg info';
+
+      let data, error;
+      try {
+        ({ data, error } = await sb.auth.signInWithPassword({ email, password }));
+      } catch (e) {
+        loginMsg.textContent = 'Error de conexión: ' + e.message;
+        loginMsg.className = 'msg error';
+        loginBtn.disabled = false;
+        return;
+      }
+
+      loginBtn.disabled = false;
+
+      if (error) {
+        // Distinguimos credenciales inválidas de "la cuenta ya no existe" cuando es posible.
+        const notFound = /user not found|invalid login credentials/i.test(error.message || '');
+        loginMsg.textContent = notFound
+          ? 'No se encontró ninguna cuenta con esos datos. Puede que ya se haya eliminado, o que el email/contraseña sean incorrectos.'
+          : 'No se pudo iniciar sesión: ' + error.message;
+        loginMsg.className = 'msg error';
+        return;
+      }
+
+      loginMsg.textContent = '';
+      document.getElementById('userEmailDisplay').textContent = 'Cuenta: ' + data.user.email;
+      loginStep.classList.add('hidden');
+      deleteStep.classList.remove('hidden');
+    });
+
+    confirmText.addEventListener('input', () => {
+      deleteBtn.disabled = confirmText.value.trim() !== 'ELIMINAR';
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      deleteMsg.textContent = 'Eliminando cuenta...';
+      deleteMsg.className = 'msg info';
+      deleteBtn.disabled = true;
+
+      const { data: sessionData } = await sb.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        deleteMsg.textContent = 'Sesión expirada. Recarga la página e inicia sesión de nuevo.';
+        deleteMsg.className = 'msg error';
+        return;
+      }
+
+      let data, error;
+      try {
+        ({ data, error } = await sb.functions.invoke(EDGE_FUNCTION_NAME, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        }));
+      } catch (e) {
+        deleteMsg.textContent = '';
+        showResult('⚠️', 'Error de conexión', 'No se pudo contactar con el servidor: ' + e.message + '. Inténtalo de nuevo.');
+        deleteBtn.disabled = false;
+        return;
+      }
+
+      deleteMsg.textContent = '';
+
+      if (error) {
+        showResult('⚠️', 'No se pudo eliminar la cuenta', 'Ha ocurrido un error: ' + error.message + '. Contacta con soporte si el problema persiste.');
+        deleteBtn.disabled = false;
+        return;
+      }
+
+      deleteStep.classList.add('hidden');
+      showResult('✅', 'Cuenta eliminada', 'Tu cuenta y tus datos personales se han eliminado correctamente. Ya puedes cerrar esta página.');
+    });
+  }
+</script>
+
+</body>
+</html>
