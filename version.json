@@ -5,8 +5,8 @@
     "storeUrl": "https://play.google.com/store/apps/details?id=app.r3hub"
   },
   "ios": {
-    "latest": "1.6.0",
+    "latest": "1.7.0",
     "minimum": "1.4.0",
-    "storeUrl": ""
+    "storeUrl": "https://apps.apple.com/es/app/id6833495729"
   }
 }
