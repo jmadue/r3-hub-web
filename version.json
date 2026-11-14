@@ -1,0 +1,12 @@
+{
+  "android": {
+    "latest": "1.7.0",
+    "minimum": "1.4.0",
+    "storeUrl": "https://play.google.com/store/apps/details?id=app.r3hub"
+  },
+  "ios": {
+    "latest": "1.6.0",
+    "minimum": "1.4.0",
+    "storeUrl": ""
+  }
+}
