@@ -1,0 +1,22 @@
+{
+  "boards": {
+    "r3-fly": [
+      {
+        "hardware": "2.ld32.1",
+        "version": "0.4.4.26111801",
+        "url": "https://r3-hub.app/firmware/jump_height_lolind32_v0.4.4.26111801.bin",
+        "size": 737216,
+        "sha256": "9d4c0b935c5b4114546aa18fbac1b1fa8133ddb46c446af2e1020d9bdd03734c"
+      }
+    ],
+    "r3-strength": [
+      {
+        "hardware": "1.0.1",
+        "version": "0.4.2.26111801",
+        "url": "https://r3-hub.app/firmware/jump_height_esp32_v0.4.2.26111801.bin",
+        "size": 744944,
+        "sha256": "73a4a835ddbeb1f28997976903835f2692bd28380513b28e115aa2381da7972a"
+      }
+    ]
+  }
+}
